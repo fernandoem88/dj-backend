@@ -13,7 +13,7 @@ module.exports = {
       path: "/upload",
       handler: "custom-controller.upload",
       config: {
-        auth: false, // if false => then it's a public route
+        // auth: false, // if false => then it's a public route
       },
     },
     {

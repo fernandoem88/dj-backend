@@ -6,42 +6,11 @@
 
 const utils = require("../../../utils");
 
-const isAuthenticatedPolicy = (ctx) => {
-  if (!ctx.state.user) {
-    ctx.unauthorized("no bearer token found in the header");
-    return false;
-  }
-  return true;
-};
-
-const isOwnerPolicy = async (ctx, eventId) => {
-  const isAuthenticated = isAuthenticatedPolicy(ctx);
-  if (!isAuthenticated) return;
-
-  const entry = await strapi.entityService.findOne(
-    "api::event.event",
-    eventId,
-    { populate: "*" }
-  );
-
-  if (!entry) {
-    ctx.notFound(`event with id ${eventId} not found!`);
-    return;
-  }
-
-  if (entry.user?.id !== ctx.state.user.id) {
-    ctx.unauthorized("you don't have right access to execute this operation");
-    return;
-  }
-
-  return entry;
-};
-
 const { createCoreController } = require("@strapi/strapi").factories;
 module.exports = createCoreController("api::event.event", ({ strapi }) => {
   return {
     async create(ctx) {
-      const isAuthenticated = isAuthenticatedPolicy(ctx);
+      const isAuthenticated = utils.isAuthenticatedPolicy(ctx);
       if (!isAuthenticated) return;
 
       // this userId qill be used in the beforeCreate hook to update
@@ -53,7 +22,7 @@ module.exports = createCoreController("api::event.event", ({ strapi }) => {
     },
     async update(ctx) {
       const { id } = ctx.params || {};
-      const isOwner = await isOwnerPolicy(ctx, id);
+      const isOwner = await utils.isOwnerPolicy(ctx, id);
 
       if (!isOwner) return;
 
@@ -67,7 +36,7 @@ module.exports = createCoreController("api::event.event", ({ strapi }) => {
     async delete(ctx) {
       const { id } = ctx.params || {};
 
-      const ownerEntry = await isOwnerPolicy(ctx, id);
+      const ownerEntry = await utils.isOwnerPolicy(ctx, id);
       if (!ownerEntry) return;
       // search, upload, uploadFiles, replaceFile, destroy, find, findOne
       const imageId = ownerEntry?.image?.id;
